@@ -74,8 +74,4 @@ pub fn main() !void {
         @panic("You need to supply a filename");
 
     }
-
-
-
-
 }
