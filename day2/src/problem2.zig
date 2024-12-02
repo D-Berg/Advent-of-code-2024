@@ -36,13 +36,13 @@ fn getOverallDirection(numbers: []const i32) Direction {
 fn isSafe(numbers: []const i32, isFirstTime: bool, allocator: Allocator) !bool {
 
     var i: usize = 0;
-    var overall_dir: Direction = getOverallDirection(numbers);
+    const overall_dir: Direction = getOverallDirection(numbers);
 
-    if (isFirstTime) log.debug("\nchecking numbers = {any}, dir = {s}", .{numbers, @tagName(overall_dir)});
+    if (isFirstTime) log.debug("checking numbers = {any}, dir = {s}", .{numbers, @tagName(overall_dir)});
 
     while (i < numbers.len - 1) : (i += 1) {
 
-        const level_status = checkLevels(i, &overall_dir, numbers[i], numbers[i + 1]);
+        const level_status = checkLevels(i, overall_dir, numbers[i], numbers[i + 1]);
 
         if (level_status == .bad) {
 
@@ -80,9 +80,10 @@ fn isSafe(numbers: []const i32, isFirstTime: bool, allocator: Allocator) !bool {
                     log.debug("checking sub_slice2 = {any}", .{slice_2});
                     return try isSafe(slice_2, false, allocator);
                 }
+            } else {
+                return false;
             }
 
-            return false;
         }
 
     }
@@ -96,7 +97,7 @@ const LevelStatus = enum {
     bad
 };
 
-fn checkLevels(i: usize, overall_dir: *Direction, n1: i32, n2: i32) LevelStatus {
+fn checkLevels(i: usize, overall_dir: Direction, n1: i32, n2: i32) LevelStatus {
 
     const diff = n2 - n1;
     if (diff == 0) {
@@ -111,18 +112,14 @@ fn checkLevels(i: usize, overall_dir: *Direction, n1: i32, n2: i32) LevelStatus 
     });
 
 
-    if (i == 0) {
-        overall_dir.* = current_dir;
-    } else {
 
-        if (current_dir != overall_dir.*) {
-            log.debug("directions don't match for n1 = {}, n2 = {}, overall_dir = {s}, current_dir = {s}", .{
-                n1, n2, @tagName(overall_dir.*), @tagName(current_dir)
-            });
-            return .bad;
-        }
-
+    if (current_dir != overall_dir) {
+        log.debug("directions don't match for n1 = {}, n2 = {}, overall_dir = {s}, current_dir = {s}", .{
+            n1, n2, @tagName(overall_dir), @tagName(current_dir)
+        });
+        return .bad;
     }
+
 
     const abs_diff = @abs(diff);
     log.debug("abs diff = {}", .{abs_diff});
