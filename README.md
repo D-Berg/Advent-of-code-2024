@@ -1,7 +1,7 @@
 # Advent of Code 2024 (in Zig)
 
 Zig version 0.13.0 is used and in order to run a problem,
-go to the specific day's dir and run
+go to the specific day's dir and run one of the following:
 
 ```
 # debug version
