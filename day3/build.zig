@@ -41,8 +41,28 @@ pub fn build(b: *std.Build) void {
     run_step2.dependOn(&run_cmd2.step);
 
 
+    const exe_unit_tests1 = b.addTest(.{
+        .root_source_file = b.path("src/p1.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const run_exe_unit_tests1 = b.addRunArtifact(exe_unit_tests1);
+
+    const test_step1 = b.step("test1", "Run problem1's unit tests");
+    test_step1.dependOn(&run_exe_unit_tests1.step);
     
 
+    const exe_unit_tests2 = b.addTest(.{
+        .root_source_file = b.path("src/p2.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const run_exe_unit_tests2 = b.addRunArtifact(exe_unit_tests2);
+
+    const test_step2 = b.step("test2", "Run problem2's unit tests");
+    test_step2.dependOn(&run_exe_unit_tests2.step);
 
 
 }
