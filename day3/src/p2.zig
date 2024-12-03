@@ -41,23 +41,26 @@ fn isDigit(char: u8) bool {
 
 }
 
-
 fn runProgram(input: []const u8) !u32 {
 
     var i: usize = 0;
-    const window_len = 4;
+    const mul_window_len = 4;
+    const do_window_len = 4;
+    const dont_window_len = 7;
     const max_num_len = 3;
 
     var result: u32 = 0;
 
-    parser: while (i < input.len - window_len) : (i += 1){
+    var enabled: bool = true;
 
-        const window = input[i..(i + window_len)];
+    parser: while (i < input.len - dont_window_len) : (i += 1){
 
-        if (std.mem.eql(u8, window, "mul(")) {
-            log.debug("window = {s}", .{window});
+        const mul_window = input[i..(i + mul_window_len)];
 
-            i += window_len; // jump where digits should be
+        if (std.mem.eql(u8, mul_window, "mul(") and enabled) {
+            log.debug("window = {s}", .{mul_window});
+
+            i += mul_window_len; // jump where digits should be
 
             var num_buffer: [max_num_len]u8 = undefined;
 
@@ -101,9 +104,26 @@ fn runProgram(input: []const u8) !u32 {
             log.debug("num2 = {}", .{num2});
 
             result += num1 * num2;
+
+            continue :parser;
+        }
+
+        const do_window = input[i..(i + do_window_len)];
+        if (std.mem.eql(u8, do_window, "do()") and !enabled) {
+            enabled = true;
+            log.debug("enabled parsing", .{});
+            continue :parser;
+        }
+
+        const dont_window = input[i..(i + dont_window_len)];
+        if (std.mem.eql(u8, dont_window, "don't()") and enabled) {
+            enabled = false;
+            log.debug("disabled parsing", .{});
+            continue :parser;
         }
 
     }
+
 
     return result;
 
@@ -113,16 +133,16 @@ fn runProgram(input: []const u8) !u32 {
 test "example input" {
     // std.testing.log_level = .debug;
 
-    const input = "xmul(2,4)%&mul[3,7]!@^do_not_mul(5,5)+mul(32,64]then(mul(11,8)mul(8,5))";
+    const input = "xmul(2,4)&mul[3,7]!^don't()_mul(5,5)+mul(32,64](mul(11,8)undo()?mul(8,5))";
     const answer = 48;
 
     const result = try runProgram(input);
 
-    std.testing.expect(result == answer) catch {
-
+    std.testing.expect(result == answer) catch |err| {
         print("expected {}, got {}\n", .{answer, result});
-
+        return err;
     };
+
 
 }
 
