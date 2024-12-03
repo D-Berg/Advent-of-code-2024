@@ -1,6 +1,7 @@
 const std = @import("std");
 const print = std.debug.print;
 const log = std.log;
+const Timer = std.time.Timer;
 
 pub fn main() !void {
 
@@ -24,7 +25,21 @@ pub fn main() !void {
         const input = try file.readToEndAlloc(allocator, file_stat.size);
         defer allocator.free(input);
 
-        std.debug.print("result = {}\n", .{try runProgram(input)});
+
+        const n_runs = 10000;
+        var total_time: u64 = 0;
+        var result: u32 = undefined;
+
+        var timer = try Timer.start();
+        for (0..n_runs) |_| {
+
+            result = try runProgram(input);
+            total_time += timer.lap();
+
+        }
+        const average_time = total_time / std.time.ns_per_us / n_runs;
+
+        std.debug.print("result = {}, time: {} μs\n", .{result, average_time});
 
     }
 

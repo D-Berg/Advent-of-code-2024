@@ -1,6 +1,7 @@
 const std = @import("std");
 const print = std.debug.print;
 const log = std.log;
+const Timer = std.time.Timer;
 
 // pub const log_level: std.log.Level = .debug;
 
@@ -26,7 +27,12 @@ pub fn main() !void {
         const input = try file.readToEndAlloc(allocator, file_stat.size);
         defer allocator.free(input);
 
-        std.debug.print("result = {}\n", .{try runProgram(input)});
+
+        var timer = try Timer.start();
+        const result = try runProgram(input);
+        const elapsed = timer.read() / std.time.ns_per_us;
+
+        std.debug.print("result = {}, time: {} μs\n", .{result, elapsed});
 
     }
 
