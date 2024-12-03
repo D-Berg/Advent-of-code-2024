@@ -120,9 +120,10 @@ test "example input" {
 
     const result = try runProgram(input);
 
-    std.testing.expect(result == answer) catch {
+    std.testing.expect(result == answer) catch |err| {
 
         print("expected {}, got {}\n", .{answer, result});
+        return err;
 
     };
 
