@@ -109,7 +109,12 @@ const Puzzle = struct {
         self.data.deinit();
     }
 
-    pub fn format(self: *const Puzzle, comptime fmt: []const u8, _: std.fmt.FormatOptions, writer: std.io.AnyWriter) !void {
+    pub fn format(
+        self: *const Puzzle, 
+        comptime fmt: []const u8, 
+        _: std.fmt.FormatOptions, 
+        writer: std.io.AnyWriter
+    ) !void {
         if (fmt.len != 0) std.fmt.invalidFmtError(fmt, self);
         for (self.data.items) |row| try writer.print("{s}\n", .{row});
     }
@@ -119,12 +124,18 @@ const Puzzle = struct {
     }
 
 
-    fn isWordInDirection(self: *const Puzzle, start_pos: Position, dir: Direction, word: []const u8) bool {
-
+    fn isWordInDirection(
+        self: *const Puzzle, 
+        start_pos: Position,
+        dir: Direction, 
+        word: []const u8
+    ) bool {
 
         var pos = start_pos;
 
-        log.debug("checking direction {s} for {s}, starting at pos({}, {})", .{@tagName(dir), word, pos.x, pos.y});
+        log.debug("checking direction {s} for {s}, starting at pos({}, {})", .{
+            @tagName(dir), word, pos.x, pos.y
+        });
         for (0..word.len) |w_idx| {
 
 
@@ -146,7 +157,9 @@ const Puzzle = struct {
 
         }
 
-        log.debug("found word at pos({}, {}) in dir {s}", .{start_pos.x, start_pos.y, @tagName(dir)});
+        log.debug("found word at pos({}, {}) in dir {s}", .{
+            start_pos.x, start_pos.y, @tagName(dir)
+        });
         return true;
 
     }
@@ -192,14 +205,22 @@ const Puzzle = struct {
                         corner.moveDir(odir) catch continue :char_loop;
 
                         // check corner for either the word or the reverse word
-                        const diag = self.isWordInDirection(corner, dir, word) or self.isWordInDirection(corner, dir, r_word);
+                        const diag = (
+                            self.isWordInDirection(corner, dir, word) or 
+                            self.isWordInDirection(corner, dir, r_word)
+                        );
+
                         if (diag == false) {
-                            log.debug("diag {s} didnt contain word", .{@tagName(dir)});
+                            log.debug("diag {s} didnt contain word", .{
+                                @tagName(dir)
+                            });
                             continue :char_loop;
                         }
                     }
 
-                    log.debug("found Cross at pos({}, {})", .{curr_pos.x, curr_pos.y});
+                    log.debug("found Cross at pos({}, {})", .{
+                        curr_pos.x, curr_pos.y
+                    });
                     count += 1;
 
                 }
