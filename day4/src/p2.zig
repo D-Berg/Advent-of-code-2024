@@ -153,7 +153,10 @@ const Puzzle = struct {
 
     fn getCountOf(self: *const Puzzle, word: []const u8) !u32 {
 
-        if (word.len != 3) return error.InvalidSearchWord;
+        if (word.len == 0) return error.SearchWordTooShort;
+        if ((word.len - 1) % 2 != 0) return error.NotAnUneverLength;
+
+        const m_idx = (word.len - 1) / 2;
 
         const r_word = try self.allocator.alloc(u8, word.len);
         defer self.allocator.free(r_word);
@@ -177,7 +180,7 @@ const Puzzle = struct {
 
                 const char = self.get(curr_pos);
 
-                if (char == word[1]) {
+                if (char == word[m_idx]) {
 
                     log.debug("found start char: {c} at pos({}, {})", .{
                         char, curr_pos.x, curr_pos.y
