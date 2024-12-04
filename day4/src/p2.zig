@@ -5,7 +5,7 @@ const print = std.debug.print;
 const log = std.log;
 
 
-const XMAS = "XMAS";
+const WORD = "MAS";
 
 const Direction = enum {
     north,
@@ -21,9 +21,11 @@ const Direction = enum {
     
 };
 
-const directions = [8]Direction {.north, .northWest, .northEast, .east, .west, .south, .southWest, .southEast};
+const directions = [2]Direction {.northWest, .northEast};
+const opposite_directions = [2]Direction {.southEast, .southWest};
 
 const Puzzle = struct {
+    allocator: Allocator,
     data: ArrayList([]const u8),
     n_rows: usize,
     n_cols: usize,
@@ -91,12 +93,11 @@ const Puzzle = struct {
         var iterator = std.mem.tokenizeAny(u8, input, "\n");
 
         while (iterator.next()) |line| {
-
-            log.debug("line length = {}", .{line.len});
             try data.append(line);
         }
 
         return Puzzle {
+            .allocator = allocator,
             .data = data,
             .n_rows = data.items.len,
             .n_cols = data.items[0].len
@@ -123,23 +124,25 @@ const Puzzle = struct {
 
         var pos = start_pos;
 
-        log.debug("checking direction {s}, starting at pos({}, {})", .{@tagName(dir), pos.x, pos.y});
-        for (1..word.len) |w_idx| {
+        log.debug("checking direction {s} for {s}, starting at pos({}, {})", .{@tagName(dir), word, pos.x, pos.y});
+        for (0..word.len) |w_idx| {
 
-            pos.moveDir(dir) catch {
-                log.debug("couldnt find word: next pos is out of bounds", .{});
-                return false;
-            };
 
             const char = self.get(pos);
 
-            log.debug("pos({}, {}): next char: {c}", .{pos.x, pos.y, char});
+            log.debug("pos({}, {}): char: {c}", .{pos.x, pos.y, char});
             
             if (char != word[w_idx]) {
-                log.debug("couldnt find word: next char didnt match", .{});
+                log.debug("couldnt find word: char didnt match", .{});
                 return false;
             }
 
+            if (w_idx < word.len - 1) {
+                pos.moveDir(dir) catch {
+                    log.debug("couldnt find word: pos is out of bounds", .{});
+                    return false;
+                };
+            }
 
         }
 
@@ -150,7 +153,14 @@ const Puzzle = struct {
 
     fn getCountOf(self: *const Puzzle, word: []const u8) !u32 {
 
-        if (word.len == 0) return error.SearchWordTooShort;
+        if (word.len != 3) return error.InvalidSearchWord;
+
+        const r_word = try self.allocator.alloc(u8, word.len);
+        defer self.allocator.free(r_word);
+        
+        @memcpy(r_word[0..], word[0..]);
+
+        std.mem.reverse(u8, r_word);
 
         var count: u32 = 0;
         var curr_pos: Position = .{ 
@@ -161,21 +171,33 @@ const Puzzle = struct {
 
         for (0..self.n_rows) |x| {
 
-            for (0..self.data.items[x].len) |y| {
+            char_loop: for (0..self.data.items[x].len) |y| {
                 
                 curr_pos.x = x; curr_pos.y = y;
 
                 const char = self.get(curr_pos);
 
-                if (char == word[0]) {
+                if (char == word[1]) {
 
-                    log.debug("found start char: {c} at pos({}, {}), starting search for {s}", .{
-                        char, curr_pos.x, curr_pos.y, word});
+                    log.debug("found start char: {c} at pos({}, {})", .{
+                        char, curr_pos.x, curr_pos.y
+                    });
 
-                    // search all directions for a next valid char
-                    for (directions) |dir| { // TODO: Multithread it
-                        if (self.isWordInDirection(curr_pos, dir, word)) count += 1;
+
+                    for (directions, opposite_directions) |dir, odir| {
+                        var corner = curr_pos;
+                        corner.moveDir(odir) catch continue :char_loop;
+
+                        // check corner for either the word or the reverse word
+                        const diag = self.isWordInDirection(corner, dir, word) or self.isWordInDirection(corner, dir, r_word);
+                        if (diag == false) {
+                            log.debug("diag {s} didnt contain word", .{@tagName(dir)});
+                            continue :char_loop;
+                        }
                     }
+
+                    log.debug("found Cross at pos({}, {})", .{curr_pos.x, curr_pos.y});
+                    count += 1;
 
                 }
         
@@ -218,9 +240,9 @@ pub fn main() !void {
         const puzzle = try Puzzle.init(allocator, input);
         defer puzzle.deinit();
 
-        const count = puzzle.getCountOf(XMAS);
+        const count = puzzle.getCountOf(WORD);
 
-        print("{s} appears: {any} times\n", .{XMAS, count});
+        print("{s} appears: {any} times\n", .{WORD, count});
 
     }
 
@@ -230,11 +252,11 @@ pub fn main() !void {
 
 test "example input" {
 
-    // std.testing.log_level = .debug;
+    std.testing.log_level = .debug;
 
     const allocator = std.testing.allocator;
 
-    const answer = 18;
+    const answer = 9;
     const input = 
         \\MMMSXXMASM
         \\MSAMXMSMSA
@@ -251,7 +273,7 @@ test "example input" {
     const puzzle = try Puzzle.init(allocator, input);
     defer puzzle.deinit();
 
-    const result = puzzle.getCountOf(XMAS);
+    const result = puzzle.getCountOf(WORD);
 
     try std.testing.expectEqual(answer, result);
 
